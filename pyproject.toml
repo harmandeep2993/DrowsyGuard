@@ -1,0 +1,12 @@
+[project]
+name = "drowsyguard"
+version = "0.1.0"
+description = "Real-time driver drowsiness detection using OpenCV and MediaPipe"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mediapipe==0.10.14",
+    "numpy>=2.2.6",
+    "opencv-python>=4.13.0.92",
+    "pygame>=2.6.1",
+]
