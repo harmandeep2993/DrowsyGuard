@@ -1,56 +1,51 @@
-<div align='center'>
+<div align="center">
 
-# 👁️ DrowsyGuard
-
+# DrowsyGuard 👁️
+ 
 ![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)
 ![OpenCV](https://img.shields.io/badge/OpenCV-4.13-green?logo=opencv)
 ![MediaPipe](https://img.shields.io/badge/MediaPipe-0.10.14-orange)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 ![Status](https://img.shields.io/badge/Status-Active-brightgreen)
-
+ 
 Real-time driver drowsiness detection using **MediaPipe Face Mesh** and **OpenCV**.  
 Detects eye closure and yawning from a webcam feed and triggers alerts before fatigue becomes dangerous.
-
+ 
+![Demo](assets/demo.gif)
+ 
 </div>
 
-## Demo
-
-![image](assets/demo.gif)
-
-> Webcam opens → face landmarks detected → EAR/MAR calculated every frame → alert fires when threshold exceeded
-
+## Features
+ 
+- Personal calibration at startup — thresholds adapt to your face automatically
+- Eye closure detection using Eye Aspect Ratio (EAR)
+- Yawn detection using Mouth Aspect Ratio (MAR)
+- Audio alert on drowsiness, visual overlay for both events
+- FPS counter displayed on screen
+- Session logging — every event saved to CSV with timestamp and metric values
+- Runs fully on CPU, no GPU required
 
 ## How It Works
 
+MediaPipe Face Mesh detects 468 facial landmarks from each webcam frame. From these landmarks, two geometric ratios are calculated every frame
+
 ### Eye Aspect Ratio (EAR)
-MediaPipe detects 468 facial landmarks per frame. We extract 6 points around each eye and calculate:
+**Eye Aspect Ratio (EAR)** measures how open the eyes are using 6 points around each eye. When eyes are open the ratio is high (~0.30-0.40). When eyes close the ratio drops (~0.15). If EAR stays below the personal threshold for 48 consecutive frames (~2 seconds), a drowsiness alert fires.
 
 ```
 EAR = (|P2-P6| + |P3-P5|) / (2 * |P1-P4|)
 ```
 
-- Eyes open → EAR ~0.30-0.40
-- Eyes closed → EAR ~0.15 or below
-- If EAR stays below `0.25` for **48 consecutive frames (~2 seconds)** → **DROWSINESS ALERT**
-
 ### Mouth Aspect Ratio (MAR)
-Same principle applied to mouth landmarks:
+**Mouth Aspect Ratio (MAR)** applies the same principle to mouth landmarks. A wide open mouth during a yawn pushes the ratio significantly above the resting baseline. If MAR exceeds the personal threshold for 20 consecutive frames, a yawn is detected.
 
-- Mouth closed → MAR ~0.80
-- Mouth open (yawn) → MAR ~1.1+
-- If MAR exceeds `1.1` for **20 consecutive frames** → **YAWN DETECTED**
+### Calibration
+**Calibration** runs at startup for 10 seconds. The app measures your personal EAR and MAR baseline with eyes open and mouth closed, then sets thresholds automatically. No manual tuning needed. This makes detection accurate for every face without manual tuning.
 
-
-## Features
-
-- Real-time eye closure detection using EAR algorithm
-- Yawn detection using MAR algorithm
-- Audio alert (beep) on drowsiness
-- Visual overlay — red screen for drowsiness, orange for yawning
-- Session logging — every event saved to CSV with timestamp, EAR, MAR values
-- Runs fully on CPU, no GPU required
-
----
+```
+EAR threshold = avg_EAR - 0.10
+MAR threshold = avg_MAR + 0.25
+```
 
 ## Project Structure
 
@@ -58,14 +53,19 @@ Same principle applied to mouth landmarks:
 DrowsyGuard/
 │
 ├── src/
-│   ├── detector.py       # MediaPipe face mesh + EAR/MAR calculation
+│   ├── detector.py       # MediaPipe face mesh, EAR and MAR calculation
 │   ├── alerter.py        # audio alert logic
+│   ├── calibrator.py     # startup calibration for personal thresholds
 │   ├── logger.py         # session event logging to CSV
-│   └── utils.py          # draw overlays and helpers
+│   └── utils.py          # overlays and display helpers
+│
+├── assets/
+│   └── demo.gif          # demo recording
 │
 ├── logs/                 # auto-created, stores session CSV files
-├── app.py                # main entry point, webcam loop
-├── config.py             # thresholds and landmark indices
+├── app.py                # main entry point and webcam loop
+├── config.py             # landmark indices and frame count thresholds
+├── requirements.txt
 ├── pyproject.toml
 └── README.md
 ```
@@ -74,13 +74,11 @@ DrowsyGuard/
 
 | Tool | Purpose |
 |---|---|
-| MediaPipe 0.10 | Face mesh — 468 landmark detection |
-| OpenCV | Webcam capture, frame processing, drawing |
+| MediaPipe 0.10.14 | Face mesh — 468 landmark detection |
+| OpenCV 4.13 | Webcam capture, frame processing, drawing |
 | NumPy | EAR/MAR geometric calculations |
 | Pygame | Audio alert generation |
 | Python 3.12 | Runtime |
-
----
 
 ## Installation
 
@@ -89,62 +87,35 @@ git clone https://github.com/harmandeep2993/DrowsyGuard.git
 cd DrowsyGuard
 
 uv venv --python 3.12
-.venv\Scripts\activate        # Windows
-# source .venv/bin/activate   # macOS/Linux
+.venv\Scripts\activate         # Windows
+source .venv/bin/activate      # macOS/Linux
 
-uv add opencv-python mediapipe==0.10.14 numpy pygame
+uv pip install -r requirements.txt
 ```
 
----
 
 ## Usage
-
+ 
 ```bash
 python app.py
 ```
-
-Press `q` to quit.
-
----
-
-## Session Logs
-
-Every drowsiness and yawn event is saved to `logs/session_YYYYMMDD_HHMMSS.csv`:
-
-```
-timestamp,event,ear,mar,duration_frames
-2026-05-03 21:53:36,DROWSY,0.163,1.232,48
-2026-05-03 21:54:04,YAWN,0.273,1.073,20
-```
-
----
-
-## Thresholds
-
-| Parameter | Value | Description |
+ 
+Keep eyes open and mouth closed during the 10-second calibration screen. Detection starts automatically after calibration. Press `q` or `ctrl+C` to quit
+ 
+## Alerts
+| Event | Visual | Audio |
 |---|---|---|
-| `EAR_THRESHOLD` | 0.25 | Below this = eyes closed |
-| `EAR_CONSEC_FRAMES` | 48 | ~2 seconds of closed eyes |
-| `MAR_THRESHOLD` | 1.1 | Above this = yawning |
-| `MAR_CONSEC_FRAMES` | 20 | ~1 second of open mouth |
-
-Thresholds can be adjusted in `config.py` to calibrate for different faces.
-
-## Why This Project
-
-Drowsy driving causes approximately **20% of fatal road accidents** in Europe.  
-Companies like Bosch, Continental, and BMW build driver monitoring systems using exactly this approach — face landmark detection + geometric ratio algorithms.
-
-This project demonstrates how MediaPipe's face mesh can be used as the foundation for a real-time safety-critical computer vision application.
-
+| Drowsiness | Red screen overlay | Beep, loops until eyes open |
+| Yawning | Orange screen overlay | None |
+ 
 ## Limitations
-
-- Requires good lighting and no IR camera support
-- Single face only
-- Fixed thresholds and no automatic per-user calibration
+- Requires good lighting, no IR camera support
+- Single face detection only
+- Calibration is session-based and recalibrates on every run
 - Not validated for production safety use
 
-## Author
-
-**Harmandeep Singh**  
-[GitHub](https://github.com/harmandeep2993) · Berlin, Germany
+## Why This Project
+Drowsy driving causes approximately 20% of fatal road accidents in Europe. Companies like Bosch, Continental, and BMW build driver monitoring systems using exactly this approach and face landmark detection combined with geometric ratio algorithms. This project demonstrates how MediaPipe face mesh can serve as the foundation for a real-time safety-critical computer vision application.
+ 
+## License
+MIT © 2026 Harmandeep Singh
