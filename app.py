@@ -19,6 +19,9 @@ from src.utils import (
     draw_fps
 )
 
+import warnings
+warnings.filterwarnings("ignore")
+
 
 def main():
     cap = cv2.VideoCapture(0)
