@@ -1,13 +1,13 @@
 # app.py
 
 import cv2
-from config import (
-    EAR_CONSEC_FRAMES,
-    MAR_CONSEC_FRAMES,
-    WINDOW_NAME
-)
+import time
+
+from config import EAR_CONSEC_FRAMES, MAR_CONSEC_FRAMES, WINDOW_NAME
+from src.logger import SessionLogger
 from src.detector import FaceDetector
 from src.alerter import Alerter
+from src.calibrator import Calibrator
 from src.utils import (
     draw_eye_points,
     draw_ear_score,
@@ -15,16 +15,16 @@ from src.utils import (
     draw_status,
     draw_mouth_points,
     draw_yawn_alert,
-    draw_mar_score
+    draw_mar_score,
+    draw_fps
 )
-from src.logger import SessionLogger
-from src.calibrator import Calibrator
 
 
 def main():
     cap = cv2.VideoCapture(0)
     detector = FaceDetector()
     alerter = Alerter()
+    prev_time = 0
     logger = SessionLogger()
 
     # run calibration at startup
@@ -40,6 +40,9 @@ def main():
 
     while True:
         ret, frame = cap.read()
+        curr_time = time.time()
+        fps = 1 / (curr_time - prev_time) if prev_time else 0
+        prev_time = curr_time
         if not ret:
             break
 
@@ -102,6 +105,7 @@ def main():
                 2
             )
 
+        draw_fps(frame, fps)
         cv2.imshow(WINDOW_NAME, frame)
 
         if cv2.waitKey(1) & 0xFF == ord("q"):

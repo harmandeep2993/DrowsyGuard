@@ -117,3 +117,16 @@ def draw_mar_score(frame, mar):
         color,
         2
     )
+
+
+def draw_fps(frame, fps):
+    """Display FPS on frame."""
+    cv2.putText(
+        frame,
+        f"FPS: {fps:.0f}",
+        (frame.shape[1] - 100, 30),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.7,
+        (255, 255, 0),
+        2
+    )
