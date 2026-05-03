@@ -2,18 +2,12 @@
 
 import cv2
 from config import (
-    EAR_THRESHOLD,
     EAR_CONSEC_FRAMES,
-    MAR_THRESHOLD,
     MAR_CONSEC_FRAMES,
     WINDOW_NAME
 )
 from src.detector import FaceDetector
 from src.alerter import Alerter
-from src.logger import SessionLogger
-
-logger = SessionLogger()
-
 from src.utils import (
     draw_eye_points,
     draw_ear_score,
@@ -23,12 +17,21 @@ from src.utils import (
     draw_yawn_alert,
     draw_mar_score
 )
+from src.logger import SessionLogger
+from src.calibrator import Calibrator
 
 
 def main():
     cap = cv2.VideoCapture(0)
     detector = FaceDetector()
     alerter = Alerter()
+    logger = SessionLogger()
+
+    # run calibration at startup
+    calibrator = Calibrator(duration=10)
+    print("Starting calibration...")
+    ear_threshold, mar_threshold = calibrator.run(cap, detector)
+    print(f"Calibration complete — EAR threshold: {ear_threshold}, MAR threshold: {mar_threshold}")
 
     ear_counter = 0
     yawn_counter = 0
@@ -56,14 +59,14 @@ def main():
             draw_mar_score(frame, mar)
 
             # drowsiness logic
-            if ear < EAR_THRESHOLD:
+            if ear < ear_threshold:
                 ear_counter += 1
                 if ear_counter >= EAR_CONSEC_FRAMES:
                     alert_on = True
                     alerter.play()
                     draw_alert(frame)
                     draw_status(frame, "DROWSY", ear_counter)
-                    if ear_counter == EAR_CONSEC_FRAMES:  # log only once per event
+                    if ear_counter == EAR_CONSEC_FRAMES:
                         logger.log_event("DROWSY", ear, mar, ear_counter)
                 else:
                     draw_status(frame, "EYES CLOSING", ear_counter)
@@ -72,16 +75,15 @@ def main():
                 alert_on = False
                 alerter.stop()
                 draw_status(frame, "AWAKE", ear_counter)
-                if yawn_counter == MAR_CONSEC_FRAMES:  # log only once per event
-                    logger.log_event("YAWN", ear, mar, yawn_counter)
 
             # yawning logic
-            if mar > MAR_THRESHOLD:
-                # print(f"MAR: {mar:.2f}")
+            if mar > mar_threshold:
                 yawn_counter += 1
                 if yawn_counter >= MAR_CONSEC_FRAMES:
                     yawn_alert_on = True
                     draw_yawn_alert(frame)
+                    if yawn_counter == MAR_CONSEC_FRAMES:
+                        logger.log_event("YAWN", ear, mar, yawn_counter)
             else:
                 yawn_counter = 0
                 yawn_alert_on = False
