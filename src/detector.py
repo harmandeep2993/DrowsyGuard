@@ -3,7 +3,7 @@
 import cv2
 import mediapipe as mp
 import numpy as np
-from config import LEFT_EYE, RIGHT_EYE
+from config import LEFT_EYE, RIGHT_EYE, EAR_THRESHOLD, MOUTH
 
 
 class FaceDetector:
@@ -50,3 +50,22 @@ class FaceDetector:
 
         avg_ear = (left_ear + right_ear) / 2.0
         return avg_ear, left_points, right_points
+    
+    def calculate_mar(self, landmarks, frame_w, frame_h):
+        """Calculate Mouth Aspect Ratio for yawning detection."""
+        points = []
+        for idx in MOUTH:
+            x = int(landmarks[idx].x * frame_w)
+            y = int(landmarks[idx].y * frame_h)
+            points.append((x, y))
+
+        # vertical distances
+        A = np.linalg.norm(np.array(points[2]) - np.array(points[6]))
+        B = np.linalg.norm(np.array(points[3]) - np.array(points[7]))
+        C = np.linalg.norm(np.array(points[4]) - np.array(points[5]))
+
+        # horizontal distance
+        D = np.linalg.norm(np.array(points[0]) - np.array(points[1]))
+
+        mar = (A + B + C) / (2.0 * D)
+        return mar, points
