@@ -15,6 +15,8 @@ Detects eye closure and yawning from a webcam feed and triggers alerts before fa
  
 </div>
 
+[Demo](https://drive.google.com/file/d/1N99XT4pOi_pm7FdS_8Fr2l5jwAqpjXcF/view?usp=drive_link) with sound alerts.
+
 ## Features
  
 - Personal calibration at startup and thresholds adapt to your face automatically
