@@ -10,19 +10,19 @@
  
 Real-time driver drowsiness detection using **MediaPipe Face Mesh** and **OpenCV**.  
 Detects eye closure and yawning from a webcam feed and triggers alerts before fatigue becomes dangerous.
- 
+
 ![Demo](assets/demo.gif)
  
 </div>
 
 ## Features
  
-- Personal calibration at startup — thresholds adapt to your face automatically
+- Personal calibration at startup and thresholds adapt to your face automatically
 - Eye closure detection using Eye Aspect Ratio (EAR)
 - Yawn detection using Mouth Aspect Ratio (MAR)
 - Audio alert on drowsiness, visual overlay for both events
 - FPS counter displayed on screen
-- Session logging — every event saved to CSV with timestamp and metric values
+- Session logging with every event saved to CSV with timestamp and metric values
 - Runs fully on CPU, no GPU required
 
 ## How It Works
@@ -107,6 +107,8 @@ Keep eyes open and mouth closed during the 10-second calibration screen. Detecti
 |---|---|---|
 | Drowsiness | Red screen overlay | Beep, loops until eyes open |
 | Yawning | Orange screen overlay | None |
+
+![Alert](assets/alert.jpg)
  
 ## Limitations
 - Requires good lighting, no IR camera support
